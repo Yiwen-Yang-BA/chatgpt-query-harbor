@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="导入一份 CSV，生成可编辑的 SQL，再运行只读查询。看清每一步如何得到结果。"
+    />
+    <title>Query Harbor · AI 小工具</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/data.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand"><span class="logo">H</span>Query Harbor</div>
+        <div class="side-intro">
+          <div class="eyebrow">DATA & FINANCE STUDIO</div>
+          <div class="nav-item">只读 SQL 工作台</div>
+        </div>
+        <div class="side-note">
+          把一个想法，变成可以使用的结果。<br />轻量、专注，按你的节奏。
+        </div>
+        <div class="side-bottom">
+          <div class="eyebrow">CONNECTION</div>
+          <label
+            ><span class="sr-only" hidden>运行模式</span
+            ><select id="mode" aria-label="运行模式"></select
+          ></label>
+        </div>
+        <div class="side-footer">
+          DATA EDITION / 03<br />Built for a little more clarity.
+        </div>
+      </aside>
+      <main class="main">
+        <header class="topbar">
+          <span class="crumb">我的工作台 &nbsp; / &nbsp; 只读 SQL 工作台</span
+          ><span class="top-meta"
+            ><i class="dot"></i><span id="connection">正在连接…</span></span
+          >
+        </header>
+        <section class="hero">
+          <div class="eyebrow">ASK. INSPECT. THEN QUERY.</div>
+          <h1>把问题，变成可核对的查询。</h1>
+          <p class="description">
+            导入一份 CSV，生成可编辑的
+            SQL，再运行只读查询。看清每一步如何得到结果。
+          </p>
+        </section>
+        <section class="data-layout">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>临时数据表</h2>
+              <button id="sample" class="small">示例数据</button>
+            </div>
+            <p class="source-note">
+              构造销售样例 · 表名固定为 <code>dataset</code>
+            </p>
+            <textarea
+              id="csv"
+              rows="11"
+              maxlength="250000"
+              spellcheck="false"
+              placeholder="粘贴带表头的 CSV…"
+            ></textarea
+            ><input
+              id="file"
+              type="file"
+              class="upload-input"
+              accept=".csv"
+              aria-label="导入CSV"
+            />
+            <div class="toolbar">
+              <button id="inspect" class="primary">读取字段</button
+              ><span id="dataset-state" class="hint">尚未载入</span>
+            </div>
+            <div class="divider"></div>
+            <h2>字段结构</h2>
+            <div id="schema" class="stack">
+              <p class="muted">读取数据后显示。</p>
+            </div>
+            <details>
+              <summary>支持的函数与限制</summary>
+              <p class="hint">
+                COUNT、SUM、AVG、MIN、MAX、ROUND、ABS、LENGTH、LOWER、UPPER、COALESCE、IFNULL、NULLIF。只允许
+                SELECT，每次最多返回 200 行。
+              </p>
+            </details>
+          </section>
+          <div>
+            <section class="panel data-panel">
+              <div class="result-title">
+                <h2>从问题开始</h2>
+                <span class="chip">SCHEMA → SQL</span>
+              </div>
+              <form id="suggest-form">
+                <label
+                  >你想了解什么<textarea
+                    id="question"
+                    rows="3"
+                    maxlength="1000"
+                    required
+                    style="min-height: 90px"
+                    placeholder="例如：按 region 分组，统计 amount 的合计"
+                  ></textarea></label
+                ><button
+                  id="suggest"
+                  class="small"
+                  disabled
+                  style="margin-top: 14px"
+                >
+                  生成 SQL 草稿
+                </button>
+              </form>
+              <div id="meta" class="meta"></div>
+              <p id="explanation" class="hint">
+                也可以直接在下面编写 SELECT 查询。
+              </p>
+              <div class="divider"></div>
+              <div class="result-title">
+                <h2>检查与执行</h2>
+                <button id="count-query" class="small" disabled>
+                  行数示例
+                </button>
+              </div>
+              <form id="query-form">
+                <label class="sr-only" hidden>SQL 查询</label
+                ><textarea
+                  id="sql"
+                  rows="6"
+                  maxlength="4000"
+                  spellcheck="false"
+                  aria-label="SQL 查询"
+                  placeholder="SELECT * FROM dataset LIMIT 20;"
+                  style="
+                    font:
+                      13px/1.8 Consolas,
+                      monospace;
+                  "
+                ></textarea>
+                <div class="toolbar">
+                  <button id="execute" class="primary" disabled>
+                    执行只读查询 ↗</button
+                  ><span class="hint"
+                    >生成草稿后请检查语句；执行不会调用 AI。</span
+                  >
+                </div>
+              </form>
+            </section>
+            <section class="panel data-panel">
+              <div class="result-title">
+                <h2>查询结果</h2>
+                <span id="query-status" class="chip">READY WHEN YOU ARE</span>
+              </div>
+              <p id="result-sql" class="hint"></p>
+              <div id="warnings" class="warning-list"></div>
+              <div id="results" class="table-wrap">
+                <div class="empty">
+                  <div class="symbol">⌘</div>
+                  <h3>结果，可以追溯</h3>
+                  <p>查询后会保留本次执行的 SQL 与结果快照。</p>
+                </div>
+              </div>
+              <div id="exports" class="toolbar" hidden>
+                <button id="export-csv" class="primary">导出结果 CSV</button
+                ><button id="export-sql" class="small">导出 SQL</button
+                ><button id="export-json" class="small">导出 JSON</button>
+              </div>
+            </section>
+            <section class="panel data-panel">
+              <h2>数据预览 <small class="muted">前 8 行</small></h2>
+              <div id="preview" class="table-wrap">
+                <p class="muted">读取数据后显示。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+        <footer class="footer">
+          <span>Query Harbor · 独立轻量实现</span
+          ><span
+            >灵感来自
+            <a
+              href="https://github.com/Canner/WrenAI"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Canner/WrenAI</a
+            >
+            &nbsp; / &nbsp; 03 OF 10</span
+          >
+        </footer>
+      </main>
+    </div>
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
